@@ -1,7 +1,7 @@
 # BLEMouseWatcher
 Bluetooth Low Energy Mouse autoconnect (Windows 10)
 
-Fix for Rapoo MT550, Rapoo MT750 and other bluetooth mices in Bluetooth 4.0LE mode ('BleMouse' device): a paired Bluetooth LE mouse fails to automatically reconnect after loosing bluetooth connection on Windows 10 (when restartong PC, on/off bluetooth on PC or on mouse).
+Fix for Rapoo MT550, Rapoo MT750 and other bluetooth mices in Bluetooth 4.0LE mode ('BleMouse' device): a paired Bluetooth LE mouse fails to automatically reconnect after loosing bluetooth connection on Windows 10 (when restarting PC, on/off bluetooth on PC or on mouse).
 
 Requirements:
  - Windows 10

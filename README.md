@@ -9,6 +9,6 @@ Requirements:
  - Bluetooth LE radio and mouse
  
  Install to autorun:
- Put BLEMouseWatcher.exe to C:\Users\[Username]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\
+ Put BLEMouseWatcher.exe to C:\Users\\[Username]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\
  BLEMouseWatcher.exe can be stopped by killing in Windows Task Manager.
  

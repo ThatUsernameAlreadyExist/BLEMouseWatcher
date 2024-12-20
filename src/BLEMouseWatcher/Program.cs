@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 
+
 namespace BLEMouseWatcher
 {
     class Program
@@ -20,6 +21,9 @@ namespace BLEMouseWatcher
 
         static void Main(string[] args)
         {
+            ManualResetEvent watcherStopEvent = new ManualResetEvent(false);
+            ManualResetEvent disconnectEvent  = new ManualResetEvent(false);
+
             // Start endless BLE device watcher
             var watcher = DeviceInformation.CreateWatcher(allBleDevicesStr, requestedBLEProperties, DeviceInformationKind.AssociationEndpoint);
             watcher.Added += (DeviceWatcher sender, DeviceInformation devInfo) =>
@@ -34,44 +38,70 @@ namespace BLEMouseWatcher
             };
             watcher.Stopped += (DeviceWatcher sender, object arg) =>
             {
+                watcherStopEvent.Set();
             };
 
-            int sleepMs = 5000;
-
-            // Main loop
             while (true)
             {
-                Thread.Sleep(sleepMs);
-
-                if (watcher.Status == Windows.Devices.Enumeration.DeviceWatcherStatus.Stopped ||
-                    watcher.Status == Windows.Devices.Enumeration.DeviceWatcherStatus.Created)
+                BluetoothLEDevice bluetoothLEDevice = findMonitoredBluetoothLEDevice();
+                if (bluetoothLEDevice == null)
                 {
-                    if (IsMonitoredBluetoothLEDeviceConnected())
+                    Thread.Sleep(15000);
+                }
+                else
+                {
+                    if (bluetoothLEDevice.ConnectionStatus == BluetoothConnectionStatus.Disconnected)
                     {
-                        sleepMs = 10000;
-                    }
-                    else
-                    {
-                        watcher.Start();
-                        sleepMs = 7000;
+                        disconnectEvent.Set();
                     }
 
-                    Thread.Sleep(sleepMs);
+                    bluetoothLEDevice.ConnectionStatusChanged += (BluetoothLEDevice sender, object arg) =>
+                    {
+                        if (sender.ConnectionStatus == BluetoothConnectionStatus.Disconnected)
+                        {
+                            disconnectEvent.Set();
+                        }
+                        else
+                        {
+                            disconnectEvent.Reset();
+                            if (watcher.Status == Windows.Devices.Enumeration.DeviceWatcherStatus.Started)
+                            {
+                                watcher.Stop();
+                            }
+                        }
+                    };
+
+                    while (true)
+                    {
+                        disconnectEvent.WaitOne();
+
+                        if (watcher.Status == Windows.Devices.Enumeration.DeviceWatcherStatus.Stopped ||
+                            watcher.Status == Windows.Devices.Enumeration.DeviceWatcherStatus.Created)
+                        {
+                            watcherStopEvent.Reset();
+                            watcher.Start();
+                        }
+
+                        watcherStopEvent.WaitOne();
+                        Thread.Sleep(500);
+                    }
                 }
             }
         }
 
-        static bool IsMonitoredBluetoothLEDeviceConnected()
+
+        static BluetoothLEDevice findMonitoredBluetoothLEDevice()
         {
-            Task<DeviceInformationCollection> task = DeviceInformation.FindAllAsync(BluetoothLEDevice.GetDeviceSelectorFromConnectionStatus(BluetoothConnectionStatus.Connected)).AsTask();
+            Task<DeviceInformationCollection> task = DeviceInformation.FindAllAsync(BluetoothLEDevice.GetDeviceSelector()).AsTask();
             foreach (DeviceInformation device in task.Result)
             {
                 if (monitoredDevices.Contains(device.Name))
                 {
-                    return true;
+                    Task<BluetoothLEDevice> bleDevice = BluetoothLEDevice.FromIdAsync(device.Id).AsTask();
+                    return bleDevice.Result;
                 }
             }
-            return false;
+            return null;
         }
     }
 }

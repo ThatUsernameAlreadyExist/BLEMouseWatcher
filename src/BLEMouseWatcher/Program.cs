@@ -89,18 +89,30 @@ namespace BLEMouseWatcher
             }
         }
 
-
         static BluetoothLEDevice findMonitoredBluetoothLEDevice()
         {
-            Task<DeviceInformationCollection> task = DeviceInformation.FindAllAsync(BluetoothLEDevice.GetDeviceSelector()).AsTask();
-            foreach (DeviceInformation device in task.Result)
+            try
             {
-                if (monitoredDevices.Contains(device.Name))
+                Task<DeviceInformationCollection> task = DeviceInformation.FindAllAsync(BluetoothLEDevice.GetDeviceSelector()).AsTask();
+                foreach (DeviceInformation device in task.Result)
                 {
-                    Task<BluetoothLEDevice> bleDevice = BluetoothLEDevice.FromIdAsync(device.Id).AsTask();
-                    return bleDevice.Result;
+                    if (monitoredDevices.Contains(device.Name))
+                    {
+                        Task<BluetoothLEDevice> bleDevice = BluetoothLEDevice.FromIdAsync(device.Id).AsTask();
+                        try
+                        {
+                            return bleDevice.Result;
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
                 }
             }
+            catch (Exception)
+            {
+            }
+
             return null;
         }
     }

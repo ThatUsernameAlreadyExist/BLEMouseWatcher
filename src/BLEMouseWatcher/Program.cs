@@ -46,7 +46,7 @@ namespace BLEMouseWatcher
                 BluetoothLEDevice bluetoothLEDevice = findMonitoredBluetoothLEDevice();
                 if (bluetoothLEDevice == null)
                 {
-                    Thread.Sleep(15000);
+                    Thread.Sleep(3000);
                 }
                 else
                 {
@@ -71,18 +71,25 @@ namespace BLEMouseWatcher
                         }
                     };
 
-                    while (true)
+                    while (bluetoothLEDevice != null)
                     {
-                        disconnectEvent.WaitOne();
-
-                        if (watcher.Status == Windows.Devices.Enumeration.DeviceWatcherStatus.Stopped ||
-                            watcher.Status == Windows.Devices.Enumeration.DeviceWatcherStatus.Created)
+                        if (disconnectEvent.WaitOne(3000))
                         {
-                            watcherStopEvent.Reset();
-                            watcher.Start();
+                            if (watcher.Status == Windows.Devices.Enumeration.DeviceWatcherStatus.Stopped ||
+                                watcher.Status == Windows.Devices.Enumeration.DeviceWatcherStatus.Created)
+                            {
+                                watcherStopEvent.Reset();
+                                watcher.Start();
+                            }
+
+                            watcherStopEvent.WaitOne();
+                        }
+                        else if (bluetoothLEDevice.ConnectionStatus == BluetoothConnectionStatus.Disconnected)
+                        {
+                            bluetoothLEDevice.Dispose();
+                            bluetoothLEDevice = null;
                         }
 
-                        watcherStopEvent.WaitOne();
                         Thread.Sleep(500);
                     }
                 }
